@@ -239,11 +239,11 @@
 
   function convertValues(wasMetric, nowMetric) {
     const fields = [
-      { id: 'height', conv: CONVERSIONS.heightToCm },
-      { id: 'waist', conv: CONVERSIONS.waistToCm },
-      { id: 'fg', conv: CONVERSIONS.gluToMmol },
-      { id: 'hdl', conv: CONVERSIONS.hdlToMmol },
-      { id: 'trig', conv: CONVERSIONS.triToMmol }
+      { id: 'height', conv: CONVERSIONS.heightToCm, isBlood: false },
+      { id: 'waist', conv: CONVERSIONS.waistToCm, isBlood: false },
+      { id: 'fg', conv: CONVERSIONS.gluToMmol, isBlood: true },
+      { id: 'hdl', conv: CONVERSIONS.hdlToMmol, isBlood: true },
+      { id: 'trig', conv: CONVERSIONS.triToMmol, isBlood: true }
     ];
     
     fields.forEach(field => {
@@ -258,11 +258,12 @@
         val = val / field.conv;
       }
       
-      // Round appropriately
-      if (field.id === 'height' || field.id === 'waist') {
-        input.value = nowMetric ? Math.round(val) : Math.round(val);
-      } else {
+      // Round appropriately based on unit system
+      // SI blood values (mmol/L) need decimals, US values (mg/dL, in) are integers
+      if (field.isBlood && nowMetric) {
         input.value = val.toFixed(1);
+      } else {
+        input.value = Math.round(val);
       }
     });
   }
