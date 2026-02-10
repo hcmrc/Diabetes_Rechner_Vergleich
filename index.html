@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Diabetes Risikorechner (ARIC)</title>
+  <title>Diabetes Risk Calculator (ARIC)</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -60,108 +60,260 @@
         background-color: #0b5ed7;
         border-color: #0a58ca;
     }
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .3s;
+        border-radius: 26px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+        background-color: #0d6efd;
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+    .toggle-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
   </style>
 </head>
 <body class="p-6">
   <div class="max-w-3xl mx-auto">
     <div class="card p-6 shadow bg-white">
-      <h1 class="text-2xl font-bold mb-2">Diabetes Risikorechner</h1>
+      <h1 class="text-2xl font-bold mb-2">Diabetes Risk Calculator</h1>
+      
+      <!-- Unit Toggle -->
+      <div class="mb-4 p-3 bg-gray-100 rounded-lg">
+        <label class="text-sm font-medium block mb-2">Units</label>
+        <div class="toggle-container">
+          <span class="toggle-label" id="unit-label-us" style="font-weight: 700;">US</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="unit-toggle" onchange="toggleUnits()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label" id="unit-label-si">SI</span>
+        </div>
+      </div>
      
       <form id="calcForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label class="block">
-          <span class="text-sm">Alter (Jahre)</span>
+          <span class="text-sm">Age (years)</span>
           <input id="age" type="number" class="form-control mt-1" value="54" />
         </label>
 
         <label class="block">
-          <span class="text-sm">Nüchtern-Glukose (mmol/l)</span>
-          <input id="fg" type="number" step="0.1" class="form-control mt-1" value="5.4" />
+          <span class="text-sm">Glucose <span id="fg-unit">(mg/dL)</span></span>
+          <input id="fg" type="number" step="any" class="form-control mt-1" value="97" />
         </label>
 
         <label class="block">
-          <span class="text-sm">Systolischer Blutdruck (mmHg)</span>
+          <span class="text-sm">Blood Pressure (mmHg)</span>
           <input id="sbp" type="number" class="form-control mt-1" value="120" />
         </label>
 
         <label class="block">
-          <span class="text-sm">Taillenumfang (cm)</span>
-          <input id="waist" type="number" class="form-control mt-1" value="95" />
+          <span class="text-sm">Waist Size <span id="waist-unit">(in)</span></span>
+          <input id="waist" type="number" step="any" class="form-control mt-1" value="37" />
         </label>
 
         <label class="block">
-          <span class="text-sm">Körpergröße (cm)</span>
-          <input id="height" type="number" class="form-control mt-1" value="168" />
+          <span class="text-sm">Height <span id="height-unit">(in)</span></span>
+          <input id="height" type="number" step="any" class="form-control mt-1" value="66" />
         </label>
 
         <label class="block">
-          <span class="text-sm">HDL Cholesterol (mmol/l)</span>
-          <input id="hdl" type="number" step="0.1" class="form-control mt-1" value="1.2" />
+          <span class="text-sm">Good Cholesterol (HDL) <span id="hdl-unit">(mg/dL)</span></span>
+          <input id="hdl" type="number" step="any" class="form-control mt-1" value="46" />
         </label>
 
         <label class="block">
-          <span class="text-sm">Triglyceride (mmol/l)</span>
-          <input id="trig" type="number" step="0.1" class="form-control mt-1" value="1.3" />
+          <span class="text-sm">Triglycerides <span id="trig-unit">(mg/dL)</span></span>
+          <input id="trig" type="number" step="any" class="form-control mt-1" value="115" />
         </label>
 
         <div class="flex items-center gap-2 mt-2">
           <input id="race" type="checkbox" class="form-check-input" />
-          <label for="race" class="text-sm">African American (Black)</label>
+          <label for="race" class="text-sm">Race (Black)</label>
         </div>
 
         <div class="flex items-center gap-2 mt-2">
           <input id="parent" type="checkbox" class="form-check-input" />
-          <label for="parent" class="text-sm">Mindestens ein Elternteil mit Diabetes</label>
+          <label for="parent" class="text-sm">Parental Diabetes History</label>
         </div>
       </form>
 
       <div class="mt-4">
-        <button id="calcBtn" type="button" class="btn btn-primary">Berechnen</button>
+        <button id="calcBtn" type="button" class="btn btn-primary">Calculate</button>
       </div>
       
       <div class="mt-4 p-4 rounded-lg bg-gray-50">
-        <div id="prob" class="text-3xl font-bold text-blue-600">—%</div>
-        <div class="text-sm text-gray-600 mt-2">
-          Score (Logit): <span id="score" class="font-medium">—</span>
-        </div>
+        <div class="text-sm text-gray-600 mb-1">8-Year Diabetes Risk</div>
+        <div id="prob" class="text-3xl font-bold text-red-600">—%</div>
       </div>
     </div>
   </div>
 
 <script>
 (function(){
-  // --- Modell-Koeffizienten aus der ARIC-Studie (diabAll) ---
+  // --- Model Coefficients from the ARIC Study (Schmidt et al. 2005) ---
   const COEFF = {
     intercept: -9.9808,
     age: 0.0173,
-    race: 0.4433,        // Koeffizient für "Black"
+    race: 0.4433,        // Black (1) vs Other (0)
     parentHist: 0.4981,
     sbp: 0.0111,
-    waist: 0.0273,
-    height: -0.0326,      // Korrigiertes Vorzeichen
-    fastGlu: 1.5849,
-    cholHDL: -0.4718,     // Korrigiertes Vorzeichen
-    cholTri: 0.242
+    waist: 0.0273,       // cm
+    height: -0.0326,     // cm
+    fastGlu: 1.5849,     // mmol/L
+    cholHDL: -0.4718,    // mmol/L
+    cholTri: 0.242       // mmol/L
   };
 
-  // Hilfsfunktion zum Abrufen von Elementen
+  // Unit Conversions
+  const CONVERSIONS = {
+    heightToCm: 2.54,
+    waistToCm: 2.54,
+    gluToMmol: 1 / 18,
+    hdlToMmol: 1 / 38.67,
+    triToMmol: 1 / 88.57
+  };
+
+  // State
+  let useMetric = false;
+
+  // Helper function to get elements
   const el = id => document.getElementById(id);
 
-  // Liest alle Werte aus den Formularfeldern
+  // Toggle units
+  window.toggleUnits = function() {
+    const wasMetric = useMetric;
+    useMetric = el('unit-toggle').checked;
+    
+    if (wasMetric !== useMetric) {
+      // Update label weights
+      el('unit-label-us').style.fontWeight = useMetric ? '400' : '700';
+      el('unit-label-si').style.fontWeight = useMetric ? '700' : '400';
+      
+      // Convert values
+      convertValues(wasMetric, useMetric);
+      
+      // Update unit labels
+      updateUnitLabels();
+    }
+    
+    updateResults();
+  };
+
+  function convertValues(wasMetric, nowMetric) {
+    const fields = [
+      { id: 'height', conv: CONVERSIONS.heightToCm },
+      { id: 'waist', conv: CONVERSIONS.waistToCm },
+      { id: 'fg', conv: CONVERSIONS.gluToMmol },
+      { id: 'hdl', conv: CONVERSIONS.hdlToMmol },
+      { id: 'trig', conv: CONVERSIONS.triToMmol }
+    ];
+    
+    fields.forEach(field => {
+      const input = el(field.id);
+      let val = parseFloat(input.value) || 0;
+      
+      if (nowMetric && !wasMetric) {
+        // US -> SI
+        val = val * field.conv;
+      } else if (!nowMetric && wasMetric) {
+        // SI -> US
+        val = val / field.conv;
+      }
+      
+      // Round appropriately
+      if (field.id === 'height' || field.id === 'waist') {
+        input.value = nowMetric ? Math.round(val) : Math.round(val);
+      } else {
+        input.value = val.toFixed(1);
+      }
+    });
+  }
+
+  function updateUnitLabels() {
+    if (useMetric) {
+      el('height-unit').textContent = '(cm)';
+      el('waist-unit').textContent = '(cm)';
+      el('fg-unit').textContent = '(mmol/L)';
+      el('hdl-unit').textContent = '(mmol/L)';
+      el('trig-unit').textContent = '(mmol/L)';
+    } else {
+      el('height-unit').textContent = '(in)';
+      el('waist-unit').textContent = '(in)';
+      el('fg-unit').textContent = '(mg/dL)';
+      el('hdl-unit').textContent = '(mg/dL)';
+      el('trig-unit').textContent = '(mg/dL)';
+    }
+  }
+
+  // Read all values from form fields
   function readInputs() {
+    let height = parseFloat(el('height').value) || 0;
+    let waist = parseFloat(el('waist').value) || 0;
+    let fg = parseFloat(el('fg').value) || 0;
+    let hdl = parseFloat(el('hdl').value) || 0;
+    let trig = parseFloat(el('trig').value) || 0;
+    
+    // Convert to SI units if in US mode
+    if (!useMetric) {
+      height = height * CONVERSIONS.heightToCm;
+      waist = waist * CONVERSIONS.waistToCm;
+      fg = fg * CONVERSIONS.gluToMmol;
+      hdl = hdl * CONVERSIONS.hdlToMmol;
+      trig = trig * CONVERSIONS.triToMmol;
+    }
+    
     return {
       age: parseFloat(el('age').value) || 0,
-      fg: parseFloat(el('fg').value) || 0,
+      fg: fg,
       sbp: parseFloat(el('sbp').value) || 0,
-      waist: parseFloat(el('waist').value) || 0,
-      height: parseFloat(el('height').value) || 0,
-      hdl: parseFloat(el('hdl').value) || 0,
-      trig: parseFloat(el('trig').value) || 0,
-      race: el('race').checked ? 1 : 0,     // 1 wenn ja, 0 wenn nein
-      parent: el('parent').checked ? 1 : 0  // 1 wenn ja, 0 wenn nein
+      waist: waist,
+      height: height,
+      hdl: hdl,
+      trig: trig,
+      race: el('race').checked ? 1 : 0,
+      parent: el('parent').checked ? 1 : 0
     };
   }
 
-  // Berechnet den Logit-Score
+  // Calculate Logit Score
   function calculateScore(v) {
     return COEFF.intercept
       + (COEFF.age * v.age)
@@ -175,26 +327,25 @@
       + (COEFF.cholTri * v.trig);
   }
 
-  // Logistische Funktion (Sigmoid)
+  // Logistic Function (Sigmoid)
   function logistic(x) {
     return 1 / (1 + Math.exp(-x));
   }
 
-  // Hauptfunktion zum Aktualisieren der Ergebnisse
+  // Main function to update results
   function updateResults() {
     const values = readInputs();
     const score = calculateScore(values);
     const probability = logistic(score);
 
-    // Ergebnisse in der UI anzeigen
-    el('score').textContent = score.toFixed(4);
+    // Display results in UI
     el('prob').textContent = (probability * 100).toFixed(1) + '%';
   }
 
-  // Event Listener für den Button
+  // Event Listener for button
   el('calcBtn').addEventListener('click', updateResults);
 
-  // Führt eine erste Berechnung beim Laden der Seite durch
+  // Initial calculation on page load
   updateResults();
 })();
 </script>
