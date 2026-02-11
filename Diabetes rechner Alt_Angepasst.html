@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diabetes Risk Calculator (ARIC)</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f8fafc; }
+    .card { border-radius: 12px; }
+    .form-control {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    .form-control:focus {
+        color: #212529;
+        background-color: #fff;
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
+    }
+    .form-check-input {
+        width: 1em;
+        height: 1em;
+        margin-top: 0.25em;
+        vertical-align: top;
+        border: 1px solid #ced4da;
+        border-radius: 0.25em;
+    }
+    .btn {
+        display: inline-block;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: center;
+        vertical-align: middle;
+        cursor: pointer;
+        user-select: none;
+        background-color: transparent;
+        border: 1px solid transparent;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.375rem;
+        transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+    .btn-primary {
+        color: #fff;
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .3s;
+        border-radius: 26px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+        background-color: #0d6efd;
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+    .toggle-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .btn-reset {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+    .btn-reset:hover {
+        background-color: #5c636a;
+        border-color: #565e64;
+    }
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-3xl mx-auto">
+    <div class="card p-6 shadow bg-white">
+      <div class="header-row">
+        <h1 class="text-2xl font-bold">Diabetes Risk Calculator</h1>
+        <button id="resetBtn" type="button" class="btn btn-reset">Reset</button>
+      </div>
+      
+      <!-- Unit Toggle -->
+      <div class="mb-4 p-3 bg-gray-100 rounded-lg">
+        <label class="text-sm font-medium block mb-2">Units</label>
+        <div class="toggle-container">
+          <span class="toggle-label" id="unit-label-us" style="font-weight: 700;">US</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="unit-toggle" onchange="toggleUnits()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label" id="unit-label-si">SI</span>
+        </div>
+      </div>
+     
+      <form id="calcForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-sm">Age (years)</span>
+          <input id="age" type="number" class="form-control mt-1" value="50" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Glucose <span id="fg-unit">(mg/dL)</span></span>
+          <input id="fg" type="number" step="any" class="form-control mt-1" value="95" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Blood Pressure (mmHg)</span>
+          <input id="sbp" type="number" class="form-control mt-1" value="120" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Waist Size <span id="waist-unit">(in)</span></span>
+          <input id="waist" type="number" step="any" class="form-control mt-1" value="36" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Height <span id="height-unit">(in)</span></span>
+          <input id="height" type="number" step="any" class="form-control mt-1" value="66" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Good Cholesterol (HDL) <span id="hdl-unit">(mg/dL)</span></span>
+          <input id="hdl" type="number" step="any" class="form-control mt-1" value="50" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm">Triglycerides <span id="trig-unit">(mg/dL)</span></span>
+          <input id="trig" type="number" step="any" class="form-control mt-1" value="150" />
+        </label>
+
+        <div class="flex items-center gap-2 mt-2">
+          <input id="race" type="checkbox" class="form-check-input" />
+          <label for="race" class="text-sm">Race (Black)</label>
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <input id="parent" type="checkbox" class="form-check-input" />
+          <label for="parent" class="text-sm">Parental Diabetes History</label>
+        </div>
+      </form>
+
+      <div class="mt-4">
+        <button id="calcBtn" type="button" class="btn btn-primary">Calculate</button>
+      </div>
+      
+      <div class="mt-4 p-4 rounded-lg bg-gray-50">
+        <div class="text-sm text-gray-600 mb-1">9-Year Diabetes Risk</div>
+        <div id="prob" class="text-3xl font-bold text-red-600">—%</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // --- Model Coefficients from the ARIC Study (Schmidt et al. 2005) ---
+  const COEFF = {
+    intercept: -9.9808,
+    age: 0.0173,
+    race: 0.4433,        // Black (1) vs Other (0)
+    parentHist: 0.4981,
+    sbp: 0.0111,
+    waist: 0.0273,       // cm
+    height: -0.0326,     // cm
+    fastGlu: 1.5849,     // mmol/L
+    cholHDL: -0.4718,    // mmol/L
+    cholTri: 0.242       // mmol/L
+  };
+
+  // Unit Conversions
+  const CONVERSIONS = {
+    heightToCm: 2.54,
+    waistToCm: 2.54,
+    gluToMmol: 1 / 18,
+    hdlToMmol: 1 / 38.67,
+    triToMmol: 1 / 88.57
+  };
+
+  // State
+  let useMetric = false;
+
+  // Helper function to get elements
+  const el = id => document.getElementById(id);
+
+  // Toggle units
+  window.toggleUnits = function() {
+    const wasMetric = useMetric;
+    useMetric = el('unit-toggle').checked;
+    
+    if (wasMetric !== useMetric) {
+      // Update label weights
+      el('unit-label-us').style.fontWeight = useMetric ? '400' : '700';
+      el('unit-label-si').style.fontWeight = useMetric ? '700' : '400';
+      
+      // Convert values
+      convertValues(wasMetric, useMetric);
+      
+      // Update unit labels
+      updateUnitLabels();
+    }
+    
+    updateResults();
+  };
+
+  function convertValues(wasMetric, nowMetric) {
+    const fields = [
+      { id: 'height', conv: CONVERSIONS.heightToCm, isBlood: false },
+      { id: 'waist', conv: CONVERSIONS.waistToCm, isBlood: false },
+      { id: 'fg', conv: CONVERSIONS.gluToMmol, isBlood: true },
+      { id: 'hdl', conv: CONVERSIONS.hdlToMmol, isBlood: true },
+      { id: 'trig', conv: CONVERSIONS.triToMmol, isBlood: true }
+    ];
+    
+    fields.forEach(field => {
+      const input = el(field.id);
+      let val = parseFloat(input.value) || 0;
+      
+      if (nowMetric && !wasMetric) {
+        // US -> SI
+        val = val * field.conv;
+      } else if (!nowMetric && wasMetric) {
+        // SI -> US
+        val = val / field.conv;
+      }
+      
+      // Round appropriately based on unit system
+      // SI blood values (mmol/L) need decimals, US values (mg/dL, in) are integers
+      if (field.isBlood && nowMetric) {
+        input.value = val.toFixed(1);
+      } else {
+        input.value = Math.round(val);
+      }
+    });
+  }
+
+  function updateUnitLabels() {
+    if (useMetric) {
+      el('height-unit').textContent = '(cm)';
+      el('waist-unit').textContent = '(cm)';
+      el('fg-unit').textContent = '(mmol/L)';
+      el('hdl-unit').textContent = '(mmol/L)';
+      el('trig-unit').textContent = '(mmol/L)';
+    } else {
+      el('height-unit').textContent = '(in)';
+      el('waist-unit').textContent = '(in)';
+      el('fg-unit').textContent = '(mg/dL)';
+      el('hdl-unit').textContent = '(mg/dL)';
+      el('trig-unit').textContent = '(mg/dL)';
+    }
+  }
+
+  // Read all values from form fields
+  function readInputs() {
+    let height = parseFloat(el('height').value) || 0;
+    let waist = parseFloat(el('waist').value) || 0;
+    let fg = parseFloat(el('fg').value) || 0;
+    let hdl = parseFloat(el('hdl').value) || 0;
+    let trig = parseFloat(el('trig').value) || 0;
+    
+    // Convert to SI units if in US mode
+    if (!useMetric) {
+      height = height * CONVERSIONS.heightToCm;
+      waist = waist * CONVERSIONS.waistToCm;
+      fg = fg * CONVERSIONS.gluToMmol;
+      hdl = hdl * CONVERSIONS.hdlToMmol;
+      trig = trig * CONVERSIONS.triToMmol;
+    }
+    
+    return {
+      age: parseFloat(el('age').value) || 0,
+      fg: fg,
+      sbp: parseFloat(el('sbp').value) || 0,
+      waist: waist,
+      height: height,
+      hdl: hdl,
+      trig: trig,
+      race: el('race').checked ? 1 : 0,
+      parent: el('parent').checked ? 1 : 0
+    };
+  }
+
+  // Calculate Logit Score
+  function calculateScore(v) {
+    return COEFF.intercept
+      + (COEFF.age * v.age)
+      + (COEFF.race * v.race)
+      + (COEFF.parentHist * v.parent)
+      + (COEFF.sbp * v.sbp)
+      + (COEFF.waist * v.waist)
+      + (COEFF.height * v.height)
+      + (COEFF.fastGlu * v.fg)
+      + (COEFF.cholHDL * v.hdl)
+      + (COEFF.cholTri * v.trig);
+  }
+
+  // Logistic Function (Sigmoid)
+  function logistic(x) {
+    return 1 / (1 + Math.exp(-x));
+  }
+
+  // Main function to update results
+  function updateResults() {
+    const values = readInputs();
+    const score = calculateScore(values);
+    const probability = logistic(score);
+
+    // Display results in UI
+    el('prob').textContent = (probability * 100).toFixed(1) + '%';
+  }
+
+  // Default values for reset
+  const DEFAULTS = {
+    age: 50,
+    fg: { us: 95, si: 5.3 },
+    sbp: 120,
+    waist: { us: 36, si: 91 },
+    height: { us: 66, si: 168 },
+    hdl: { us: 50, si: 1.3 },
+    trig: { us: 150, si: 1.7 },
+    race: false,
+    parent: false
+  };
+
+  // Reset function
+  function resetToDefaults() {
+    // Reset unit toggle to US
+    el('unit-toggle').checked = false;
+    useMetric = false;
+    el('unit-label-us').style.fontWeight = '700';
+    el('unit-label-si').style.fontWeight = '400';
+    updateUnitLabels();
+
+    // Reset all values to defaults (US units)
+    el('age').value = DEFAULTS.age;
+    el('fg').value = DEFAULTS.fg.us;
+    el('sbp').value = DEFAULTS.sbp;
+    el('waist').value = DEFAULTS.waist.us;
+    el('height').value = DEFAULTS.height.us;
+    el('hdl').value = DEFAULTS.hdl.us;
+    el('trig').value = DEFAULTS.trig.us;
+    el('race').checked = DEFAULTS.race;
+    el('parent').checked = DEFAULTS.parent;
+
+    updateResults();
+  }
+
+  // Event Listener for buttons
+  el('calcBtn').addEventListener('click', updateResults);
+  el('resetBtn').addEventListener('click', resetToDefaults);
+
+  // Initial calculation on page load
+  updateResults();
+})();
+</script>
+
+</body>
+</html>
